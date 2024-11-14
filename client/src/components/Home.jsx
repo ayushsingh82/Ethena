@@ -4,6 +4,78 @@ import { BackgroundLines } from "../components/ui/background-lines";
 import { Spotlight } from "../components/ui/Spotlight";
 import { HoverEffect } from "../components/ui/card-hover-effect";
 import { BackgroundBeamsWithCollision } from "../components/ui/background-beams-with-collision";
+import { Vortex } from "../components/ui/vortex";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTwitter, faLinkedin, faDiscord } from '@fortawesome/free-brands-svg-icons';
+
+function VortexDemo() {
+    return (
+      <div className="w-full mx-auto rounded-md  h-[30rem] overflow-hidden">
+        <Vortex
+          backgroundColor="black"
+          className="flex items-center flex-col justify-center px-2 md:px-10 py-4 w-full h-full"
+        >
+          <h2 className="text-white text-2xl md:text-6xl font-bold text-center">
+            Upgrading Soon
+          </h2>
+      
+          <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
+            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 transition duration-200 rounded-lg text-white shadow-[0px_2px_0px_0px_#FFFFFF40_inset]">
+             Book demo
+            </button>
+            <button className="px-4 py-2  text-white ">Watch trailer</button>
+          </div>
+        </Vortex>
+      </div>
+    );
+  }
+
+
+  function Footer() {
+    return (
+      <footer className="bg-black text-white py-8 px-4">
+           <hr className="border-t border-gray-600" />
+        <div className="flex justify-between items-center max-w-screen-xl mx-auto">
+          
+          {/* Left side: Logo */}
+          <div className="flex items-center flex flex-col">
+           <h1 className='text-2xl font-semibold'>Invoice</h1>
+          
+           <div className="flex space-x-4 mt-[10px]">
+          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-white">
+            <FontAwesomeIcon icon={faTwitter} size="lg" />
+          </a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white">
+            <FontAwesomeIcon icon={faLinkedin} size="lg" />
+          </a>
+          <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white">
+            <FontAwesomeIcon icon={faDiscord} size="lg" />
+          </a>
+        </div>
+          </div>
+  
+          {/* Center: Social Media Links */}
+   
+  
+          {/* Right side: Sign up for updates */}
+          <div className="flex flex-col items-center space-y-4">
+            <h3 className="text-lg font-semibold mt-[20px]">Sign up for updates</h3>
+            <div className="flex space-x-4">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="px-4 py-2 bg-neutral-800 text-white rounded-md"
+              />
+              <button className="px-6 py-2 bg-gradient-to-r from-purple-500 via-violet-500 to-pink-500 text-white rounded-md">
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+  
 
 function SpotlightPreview() {
     return (
@@ -96,6 +168,66 @@ function SpotlightPreview() {
   
  
   
+  function BackgroundLinesDemo1() {
+    // Sample data with updated content for the boxes
+    const data = [
+      { 
+        title: "Short to medium-term", 
+     
+        number: [
+            "Templates for the major app types we support",
+          "Integrate new payment networks without changing the smart contract",
+          "Add Reference guides to the docs"
+        ]
+      },
+      { 
+        title: "Long-term", 
+        number: [
+            "Support non-EVM chains", 
+          "Selective disclosure",
+          "Private payments"
+        ]
+      }
+    ];
+  
+    return (
+      <>
+        <BackgroundLines className="flex flex-col md:flex-row items-center justify-center w-full px-4 space-y-6 md:space-y-0 md:space-x-8">
+          {/* Left Section */}
+          <div className="md:w-1/2 flex flex-col justify-center items-start">
+            <h2 className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-700 dark:from-neutral-600 dark:to-white text-2xl md:text-2xl lg:text-6xl font-sans py-2 md:py-10 font-bold tracking-tight">
+              Upgrades roadmap <br /> 
+            </h2>
+         
+          </div>
+  
+          {/* Right Section */}
+          <div className="md:w-1/2 flex flex-col space-y-4">
+            {data.map((box, index) => (
+              <motion.div
+                key={index}
+                className="bg-gradient-to-b from-neutral-900 to-neutral-700 p-4 rounded-lg shadow-md flex flex-col items-center justify-center text-white font-semibold text-lg w-3/4 md:w-1/2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <h1 className="text-xl">{box.title}</h1>
+           
+                <div className="text-sm font-small space-y-1 mt-[20px]">
+                  {box.number.map((point, idx) => (
+                    <div key={idx} className="flex items-center">
+                      <span className="text-xs mr-2">•</span>
+                      <p>{point}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </BackgroundLines>
+      </>
+    );
+  }
+  
   
 
 function BackgroundLinesDemo() {
@@ -139,8 +271,6 @@ function BackgroundLinesDemo() {
     </>
   );
 }
-
-
 
 
 function CardHoverEffectDemo() {
@@ -199,6 +329,8 @@ const Home = () => {
       <BackgroundLinesDemo />
      <BackgroundBeamsWithCollisionDemo/>
      <CardHoverEffectDemo/>
+     <VortexDemo/>
+     <Footer/>
     </div>
   );
 };
