@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BackgroundLines } from "../components/ui/background-lines";
 import { Spotlight } from "../components/ui/Spotlight";
 import { HoverEffect } from "../components/ui/card-hover-effect";
+import { BackgroundBeamsWithCollision } from "../components/ui/background-beams-with-collision";
 
 function SpotlightPreview() {
     return (
@@ -20,6 +21,82 @@ function SpotlightPreview() {
       </div>
     );
   }
+
+  function BackgroundBeamsWithCollisionDemo() {
+    return (
+      <BackgroundBeamsWithCollision>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          {/* Centered Heading */}
+          <h2 className="text-2xl text-center relative z-20 md:text-2xl lg:text-4xl font-bold text-black dark:text-white font-sans tracking-tight">
+            Our partner{" "}
+            <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
+              <div className="absolute left-0 top-[1px] bg-clip-text bg-no-repeat text-transparent bg-gradient-to-r py-4 from-purple-500 via-violet-500 to-pink-500 [text-shadow:0_0_rgba(0,0,0,0.1)]">
+                {/* Empty div for styling */}
+              </div>
+              <div className="relative bg-clip-text text-transparent bg-no-repeat bg-gradient-to-r from-purple-500 via-violet-500 to-pink-500 py-4">
+                <span>Organisations & Projects.</span>
+              </div>
+            </div>
+          </h2>
+  
+          {/* Floating Logos */}
+          <div className="relative mt-10 text-center">
+            <motion.div
+              className="flex gap-10 justify-center"
+              initial={{ x: '-100%' }}
+              animate={{ x: '100%' }}
+              transition={{
+                repeat: Infinity,
+                repeatType: 'loop',
+                duration: 12,  // Adjust speed here
+                ease: 'linear',
+              }}
+            >
+              <img
+                src="https://www.optimism.io/optimism.svg"
+                alt="Optimism Logo"
+                className="h-12 w-36"
+              />
+              <img
+                src="https://www.base.org/_next/static/media/logo.f6fdedfc.svg"
+                alt="Base Logo"
+                className="h-12 w-auto"
+              />
+              <img
+                src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png"
+                alt="Binance Smart Chain Logo"
+                className="h-12 w-auto"
+              />
+              <img
+                src="https://cryptologos.cc/logos/avalanche-avax-logo.png"
+                alt="Avalanche Logo"
+                className="h-12 w-auto"
+              />
+              <img
+                src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=024"
+                alt="Ethereum Logo"
+                className="h-12 w-auto"
+              />
+              <img
+                src="https://cryptologos.cc/logos/arbitrum-arb-logo.svg?v=024"
+                alt="Arbitrum Logo"
+                className="h-12 w-auto"
+              />
+              <img
+                src="https://cryptologos.cc/logos/polygon-matic-logo.svg?v=024"
+                alt="Polygon Logo"
+                className="h-12 w-auto"
+              />
+            </motion.div>
+          </div>
+        </div>
+      </BackgroundBeamsWithCollision>
+    );
+  }
+  
+ 
+  
+  
 
 function BackgroundLinesDemo() {
   // Sample data with values
@@ -69,7 +146,7 @@ function BackgroundLinesDemo() {
 function CardHoverEffectDemo() {
     return (
       <div className=" mx-auto px-8 bg-black w-full">
-        <h1 className='text-center text-white font-semibold text-4xl'>Benefits</h1>
+        <h1 className='text-center text-white font-semibold text-4xl py-[30px]'>Benefits</h1>
         <HoverEffect items={projects} />
       </div>
     );
@@ -120,8 +197,8 @@ const Home = () => {
     <div>
       
       <BackgroundLinesDemo />
-      <CardHoverEffectDemo/>
-   
+     <BackgroundBeamsWithCollisionDemo/>
+     <CardHoverEffectDemo/>
     </div>
   );
 };
