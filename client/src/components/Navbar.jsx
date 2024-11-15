@@ -7,7 +7,7 @@ function Navbar() {
     <nav>
       <div className="flex flex-row mx-auto px-[40px] py-[25px] justify-between items-center bg-black">
         <div className="font-semibold text-lg text-white">
-          <a href="/">Invoice</a>
+          <a href="/">Payment</a>
         </div>
         <div className="flex flex-1 justify-center space-x-8 text-center">
           {/* Placeholder for additional center navbar items */}
