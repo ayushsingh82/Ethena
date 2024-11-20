@@ -1,23 +1,25 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import {createBrowserRouter,RouterProvider,createRoutesFromElements} from 'react-router-dom'
-import { Route } from 'react-router-dom'
-import Navbar from './components/Navbar.jsx'
-import Home from './components/Home.jsx'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './components/Home';
+import GetStarted from './components/GetStarted';
+import Navbar from './components/Navbar';
+import './index.css';
+import Dashboard from './components/Dashboard';
 
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route>
-    <Route path='/' element={<Home/>}/>
-    </Route>
-  )
-)
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-     <Navbar/>
-     <RouterProvider router={router}/>
-  </StrictMode>
-)
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <div className="min-h-screen bg-black">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/getstarted" element={<GetStarted />} />
+          <Route path="/dashboard" element={<Dashboard/>}/>
+          <Route path="/earn" element={<div className="text-white p-8">Earn Page</div>} />
+          <Route path="/borrow" element={<div className="text-white p-8">Borrow Page</div>} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  </React.StrictMode>
+);
