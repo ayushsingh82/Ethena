@@ -6,6 +6,7 @@ import GetStarted from './components/GetStarted';
 import Navbar from './components/Navbar';
 import './index.css';
 import Dashboard from './components/Dashboard';
+import Earn from './components/Earn';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -16,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/" element={<Home />} />
           <Route path="/getstarted" element={<GetStarted />} />
           <Route path="/dashboard" element={<Dashboard/>}/>
-          <Route path="/earn" element={<div className="text-white p-8">Earn Page</div>} />
+          <Route path="/earn" element={<Earn/>}/>
           <Route path="/borrow" element={<div className="text-white p-8">Borrow Page</div>} />
         </Routes>
       </div>
