@@ -27,16 +27,25 @@ contract CreditManager is Ownable {
      * @dev Opens a new credit account for the borrower.
      * @param collateralToken Address of the collateral token.
      * @param debtToken Address of the debt token.
+     * @param liquidityPool Address of the liquidity pool.
+     * @param priceOracle Address of the price oracle.
      */
-    function openCreditAccount(address collateralToken, address debtToken, address liquidityPool) external {
+    function openCreditAccount(
+        address collateralToken,
+        address debtToken,
+        address liquidityPool,
+        address priceOracle
+    ) external {
         require(creditAccounts[msg.sender] == address(0), "Credit account already exists");
 
         // Deploy a new CreditAccount contract
         CreditAccount creditAccount = new CreditAccount(
-            msg.sender, 
-            collateralToken, 
+            msg.sender,
+            collateralToken,
             debtToken,
-            liquidityPool
+            liquidityPool,
+            priceOracle,
+            address(this)  // creditManager address
         );
 
         // Map the borrower to the credit account
