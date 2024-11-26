@@ -75,6 +75,18 @@ contract LiquidityPool is ERC20, Ownable {
     }
 
     /**
+     * @dev Handles debt repayment
+     * @param borrower The address repaying the debt
+     * @param amount The amount being repaid
+     */
+    function repay(address borrower, uint256 amount) external {
+        require(msg.sender == address(creditManager), "Only credit manager can repay");
+        
+        // Token transfer is handled by CreditAccount
+        emit Withdraw(borrower, amount);
+    }
+
+    /**
      * @dev Returns the total liquidity held by the pool.
      */
     function totalLiquidity() public view returns (uint256) {
