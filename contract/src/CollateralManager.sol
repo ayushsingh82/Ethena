@@ -50,9 +50,10 @@ contract CollateralManager is Ownable {
         CreditAccount creditAccount = CreditAccount(creditAccountAddr);
 
         // Fetch price and validate withdrawal
-        uint256 collateralValue = priceOracle.getCollateralValue(address(creditAccount));
+        uint256 collateralPrice = priceOracle.getAssetPrice(address(creditAccount.collateralToken()));
+        uint256 collateralValue = creditAccount.collateralBalance() * collateralPrice;
         uint256 debtValue = creditAccount.debtAmount();
-        uint256 newCollateralValue = collateralValue - amount;
+        uint256 newCollateralValue = collateralValue - (amount * collateralPrice);
 
         require(
             newCollateralValue * 1000 >= debtValue * creditManager.minCollateralizationRatio(),
@@ -75,7 +76,8 @@ contract CollateralManager is Ownable {
 
         CreditAccount creditAccount = CreditAccount(creditAccountAddr);
 
-        uint256 collateralValue = priceOracle.getCollateralValue(address(creditAccount));
+        uint256 collateralPrice = priceOracle.getAssetPrice(address(creditAccount.collateralToken()));
+        uint256 collateralValue = creditAccount.collateralBalance() * collateralPrice;
         uint256 debtValue = creditAccount.debtAmount();
 
         require(

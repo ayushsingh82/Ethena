@@ -16,12 +16,16 @@ contract LiquidityPool is ERC20, Ownable {
     event Withdraw(address indexed user, uint256 amount);
     event InterestRateUpdated(uint256 oldRate, uint256 newRate);
 
-    constructor(IERC20 _underlyingAsset, string memory name, string memory symbol)
+    // Add at the top with other state variables
+    address public creditManager;
+
+    constructor(IERC20 _underlyingAsset, string memory name, string memory symbol, address _creditManager)
         ERC20(name, symbol)
         Ownable(msg.sender)
     {
         underlyingAsset = _underlyingAsset;
         interestRate = 500; // Default: 5% annual interest rate
+        creditManager = _creditManager;
     }
 
     /**
@@ -58,13 +62,16 @@ contract LiquidityPool is ERC20, Ownable {
     }
 
     /**
-     * @dev Allows the owner to update the annual interest rate.
+     * @dev Allows borrowing from the pool (only callable by credit accounts)
+     * @param borrower The address to receive the borrowed tokens
+     * @param amount The amount to borrow
      */
-    function setInterestRate(uint256 newRate) external onlyOwner {
-        require(newRate <= 10000, "Rate cannot exceed 100%");
-        uint256 oldRate = interestRate;
-        interestRate = newRate;
-        emit InterestRateUpdated(oldRate, newRate);
+    function borrow(address borrower, uint256 amount) external {
+        require(msg.sender == address(creditManager), "Only credit manager can borrow");
+        require(amount <= totalLiquidity(), "Insufficient liquidity");
+
+        // Transfer the tokens to the borrower
+        underlyingAsset.transfer(borrower, amount);
     }
 
     /**

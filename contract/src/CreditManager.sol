@@ -14,6 +14,7 @@ contract CreditManager is Ownable {
     // Events
     event CreditAccountOpened(address indexed borrower, address creditAccount);
     event CreditAccountClosed(address indexed borrower);
+    event LiquidationTriggered(address indexed borrower, address liquidator);
 
     constructor(uint256 _minCollateralizationRatio)
         Ownable(msg.sender)
@@ -27,11 +28,16 @@ contract CreditManager is Ownable {
      * @param collateralToken Address of the collateral token.
      * @param debtToken Address of the debt token.
      */
-    function openCreditAccount(address collateralToken, address debtToken) external {
+    function openCreditAccount(address collateralToken, address debtToken, address liquidityPool) external {
         require(creditAccounts[msg.sender] == address(0), "Credit account already exists");
 
         // Deploy a new CreditAccount contract
-        CreditAccount creditAccount = new CreditAccount(msg.sender, collateralToken, debtToken);
+        CreditAccount creditAccount = new CreditAccount(
+            msg.sender, 
+            collateralToken, 
+            debtToken,
+            liquidityPool
+        );
 
         // Map the borrower to the credit account
         creditAccounts[msg.sender] = address(creditAccount);
@@ -61,6 +67,34 @@ contract CreditManager is Ownable {
         delete creditAccounts[msg.sender];
 
         emit CreditAccountClosed(msg.sender);
+    }
+
+    /**
+     * @dev Liquidates a borrower's credit account if undercollateralized.
+     * @param borrower The address of the borrower.
+     */
+    function liquidate(address borrower) external {
+        address creditAccountAddr = creditAccounts[borrower];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+
+        // Ensure the account is undercollateralized
+        uint256 collateralValue = creditAccount.collateralBalance(); // Placeholder for actual valuation
+        uint256 debtValue = creditAccount.debtAmount(); // Placeholder for actual valuation
+        require(
+            collateralValue * 1000 < debtValue * minCollateralizationRatio,
+            "Account is not undercollateralized"
+        );
+
+        // Liquidate the account by transferring collateral to the liquidator
+        uint256 collateralBalance = creditAccount.collateralBalance();
+        creditAccount.withdrawCollateral(collateralBalance);
+
+        // Remove the borrower's credit account
+        delete creditAccounts[borrower];
+
+        emit LiquidationTriggered(borrower, msg.sender);
     }
 
     /**

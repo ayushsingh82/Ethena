@@ -45,26 +45,4 @@ contract PriceOracle is Ownable {
         require(price > 0, "Invalid price feed response");
         return uint256(price);
     }
-
-    /**
-     * @dev Get the collateral value of a credit account by summing up the prices of collateral assets
-     * @param creditAccount The address of the credit account to check
-     * @return The total collateral value in the base currency (e.g., USD or ETH)
-     */
-    function getCollateralValue(address creditAccount) external view returns (uint256) {
-        // Here, we would need to fetch the collateral assets from the CreditAccount contract.
-        // This could be an array of assets, where each asset has a price feed.
-        // For simplicity, we assume one collateral asset for now.
-
-        address collateralAsset = creditAccount; // This should be fetched from the CreditAccount contract
-        uint256 collateralAmount = 1000 * 10**18; // Example: 1000 units of the collateral asset
-
-        uint256 assetPrice = getAssetPrice(collateralAsset);
-        return collateralAmount * assetPrice / 10**18; // Normalize to 18 decimals
-    }
-
-    /**
-     * @dev Allow the contract to receive Ether if needed for price feed or other functions
-     */
-    receive() external payable {}
 }

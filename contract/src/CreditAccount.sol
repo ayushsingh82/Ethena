@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./LiquidityPool.sol";
 
 contract CreditAccount is Ownable {
     // Borrower who owns this credit account
@@ -16,18 +17,22 @@ contract CreditAccount is Ownable {
     uint256 public collateralBalance;
     uint256 public debtAmount;
 
+    // Add LiquidityPool reference
+    LiquidityPool public liquidityPool;
+
     // Events
     event CollateralDeposited(address indexed borrower, uint256 amount);
     event CollateralWithdrawn(address indexed borrower, uint256 amount);
     event DebtIncurred(address indexed borrower, uint256 amount);
     event DebtRepaid(address indexed borrower, uint256 amount);
 
-    constructor(address _borrower, address _collateralToken, address _debtToken)
+    constructor(address _borrower, address _collateralToken, address _debtToken, address _liquidityPool)
         Ownable(msg.sender)
     {
         borrower = _borrower;
         collateralToken = IERC20(_collateralToken);
         debtToken = IERC20(_debtToken);
+        liquidityPool = LiquidityPool(_liquidityPool);
     }
 
     // Modifier to restrict access to the borrower
@@ -76,8 +81,8 @@ contract CreditAccount is Ownable {
         // Update the debt amount
         debtAmount += amount;
 
-        // Transfer debt tokens to the borrower
-        debtToken.transfer(msg.sender, amount);
+        // Request funds from the liquidity pool
+        liquidityPool.borrow(msg.sender, amount);
 
         emit DebtIncurred(msg.sender, amount);
     }
