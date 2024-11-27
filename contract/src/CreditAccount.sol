@@ -111,10 +111,10 @@ contract CreditAccount is Ownable {
         // Calculate new total debt after borrowing
         uint256 newDebtAmount = debtAmount + amount;
 
-        // Check if borrowing would maintain required collateralization ratio
+        // Check leverage limit (10x)
         require(
-            collateralValue * 1000 >= newDebtAmount * creditManager.minCollateralizationRatio(),
-            "Cannot borrow, insufficient collateral"
+            newDebtAmount <= collateralValue * creditManager.maxLeverageRatio() / 1000,
+            "Exceeds maximum leverage"
         );
 
         // Update the debt amount

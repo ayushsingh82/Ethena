@@ -3,24 +3,32 @@ pragma solidity ^0.8.0;
 
 import "./CreditAccount.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./PriceOracle.sol";
 
 contract CreditManager is Ownable {
     // Mapping of borrowers to their credit accounts
     mapping(address => address) public creditAccounts;
 
-    // Minimum collateralization ratio (e.g., 150% represented as 1500)
-    uint256 public minCollateralizationRatio;
+    // Maximum leverage ratio (10x = 1000%)
+    uint256 public constant maxLeverageRatio = 1000;  // 10x leverage
+    
+    // Health ratio for liquidation (e.g., 120% represented as 1200)
+    uint256 public healthRatio;
+
+    // Add PriceOracle as a state variable
+    PriceOracle public priceOracle;
 
     // Events
     event CreditAccountOpened(address indexed borrower, address creditAccount);
     event CreditAccountClosed(address indexed borrower);
     event LiquidationTriggered(address indexed borrower, address liquidator);
 
-    constructor(uint256 _minCollateralizationRatio)
+    constructor(uint256 _healthRatio, address _priceOracleAddr)
         Ownable(msg.sender)
     {
-        require(_minCollateralizationRatio > 1000, "Ratio must be > 100%");
-        minCollateralizationRatio = _minCollateralizationRatio;
+        require(_healthRatio > 1000, "Health ratio must be > 100%");
+        healthRatio = _healthRatio;
+        priceOracle = PriceOracle(_priceOracleAddr);
     }
 
     /**
@@ -28,13 +36,13 @@ contract CreditManager is Ownable {
      * @param collateralToken Address of the collateral token.
      * @param debtToken Address of the debt token.
      * @param liquidityPool Address of the liquidity pool.
-     * @param priceOracle Address of the price oracle.
+     * @param _priceOracleAddr Address of the price oracle.
      */
     function openCreditAccount(
         address collateralToken,
         address debtToken,
         address liquidityPool,
-        address priceOracle
+        address _priceOracleAddr
     ) external {
         require(creditAccounts[msg.sender] == address(0), "Credit account already exists");
 
@@ -44,8 +52,8 @@ contract CreditManager is Ownable {
             collateralToken,
             debtToken,
             liquidityPool,
-            priceOracle,
-            address(this)  // creditManager address
+            _priceOracleAddr,
+            address(this)
         );
 
         // Map the borrower to the credit account
@@ -88,12 +96,17 @@ contract CreditManager is Ownable {
 
         CreditAccount creditAccount = CreditAccount(creditAccountAddr);
 
-        // Ensure the account is undercollateralized
-        uint256 collateralValue = creditAccount.collateralBalance(); // Placeholder for actual valuation
-        uint256 debtValue = creditAccount.debtAmount(); // Placeholder for actual valuation
+        // Get current values using the PriceOracle contract directly
+        uint256 collateralPrice = priceOracle.getAssetPrice(
+            address(creditAccount.collateralToken())
+        );
+        uint256 collateralValue = creditAccount.collateralBalance() * collateralPrice;
+        uint256 debtValue = creditAccount.debtAmount();
+
+        // Check if below health ratio
         require(
-            collateralValue * 1000 < debtValue * minCollateralizationRatio,
-            "Account is not undercollateralized"
+            collateralValue * 1000 < debtValue * healthRatio,
+            "Account is above health ratio"
         );
 
         // Liquidate the account by transferring collateral to the liquidator
@@ -107,11 +120,11 @@ contract CreditManager is Ownable {
     }
 
     /**
-     * @dev Updates the minimum collateralization ratio.
-     * @param newRatio The new minimum collateralization ratio.
+     * @dev Updates the health ratio.
+     * @param newRatio The new health ratio.
      */
-    function updateCollateralizationRatio(uint256 newRatio) external onlyOwner {
-        require(newRatio > 1000, "Ratio must be > 100%");
-        minCollateralizationRatio = newRatio;
+    function updateHealthRatio(uint256 newRatio) external onlyOwner {
+        require(newRatio > 1000, "Health ratio must be > 100%");
+        healthRatio = newRatio;
     }
 }
