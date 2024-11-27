@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BackgroundLines } from "../components/ui/background-lines";
-import { Spotlight } from "../components/ui/Spotlight";
-import { HoverEffect } from "../components/ui/card-hover-effect";
-import { BackgroundBeamsWithCollision } from "../components/ui/background-beams-with-collision";
-import { Vortex } from "../components/ui/vortex";
+import { BackgroundLines } from "./ui/background-lines";
+import { Spotlight } from "./ui/Spotlight";
+import { HoverEffect } from "./ui/card-hover-effect";
+import { BackgroundBeamsWithCollision } from "./ui/background-beams-with-collision";
+import { Vortex } from "./ui/vortex";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTwitter, faLinkedin, faDiscord } from '@fortawesome/free-brands-svg-icons';
 
