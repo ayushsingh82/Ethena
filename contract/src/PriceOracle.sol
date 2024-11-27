@@ -13,10 +13,10 @@ contract PriceOracle is Ownable {
     // Events
     event PriceFeedUpdated(address indexed asset, bytes32 indexed priceId);
 
-    constructor(address _pythAddress)
+    constructor()
         Ownable(msg.sender)
     {
-        pyth = IPyth(_pythAddress);
+        pyth = IPyth(0x2880aB155794e7179c9eE2e38200202908C17B43);
     }
 
     /**
@@ -43,13 +43,15 @@ contract PriceOracle is Ownable {
         
         // Convert to positive values and handle decimals
         uint256 basePrice = uint256(int256(price.price));
-        uint256 exponent = uint256(int256(-price.expo));
+        int256 exponent = -price.expo;  // Note: price.expo is already negative for most assets
         
-        // Scale to 18 decimals
-        if (exponent < 18) {
-            return basePrice * (10 ** (18 - exponent));
+        // Need to scale to 18 decimals
+        int256 scaleBy = 18 - exponent;  // Calculate how many decimals we need to add/remove
+        
+        if (scaleBy < 0) {
+            return basePrice / (10 ** uint256(-scaleBy));
         } else {
-            return basePrice / (10 ** (exponent - 18));
+            return basePrice * (10 ** uint256(scaleBy));
         }
     }
 }
