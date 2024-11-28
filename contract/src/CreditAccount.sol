@@ -82,10 +82,10 @@ contract CreditAccount is Ownable {
         uint256 collateralValue = collateralBalance * collateralPrice;
         uint256 newCollateralValue = collateralValue - (amount * collateralPrice);
 
-        // Check if withdrawal would maintain required collateralization ratio
+        // Check if withdrawal would maintain required leverage ratio
         require(
-            newCollateralValue * 1000 >= debtAmount * creditManager.minCollateralizationRatio(),
-            "Cannot withdraw, would breach collateralization ratio"
+            newCollateralValue * 1000 >= debtAmount * creditManager.maxLeverageRatio(),
+            "Cannot withdraw, would breach leverage ratio"
         );
 
         // Update the collateral balance
@@ -144,5 +144,22 @@ contract CreditAccount is Ownable {
         liquidityPool.repay(msg.sender, amount);
 
         emit DebtRepaid(msg.sender, amount);
+    }
+
+    /**
+     * @dev Returns the current Loan-to-Value ratio in basis points (100% = 10000)
+     */
+    function getLTV() public view returns (uint256) {
+        if (collateralBalance == 0) return 0;
+        
+        // Get current collateral value in USD
+        uint256 collateralPrice = priceOracle.getAssetPrice(address(collateralToken));
+        uint256 collateralValue = collateralBalance * collateralPrice;
+        
+        // Get current debt value
+        uint256 debtValue = debtAmount;
+        
+        // Calculate LTV ratio in basis points (100% = 10000)
+        return (debtValue * 10000) / collateralValue;
     }
 }

@@ -58,6 +58,7 @@ contract CreditManager is Ownable {
 
         // Map the borrower to the credit account
         creditAccounts[msg.sender] = address(creditAccount);
+        creditAccountsList.push(address(creditAccount));  // Add to list
 
         emit CreditAccountOpened(msg.sender, address(creditAccount));
     }
@@ -127,4 +128,28 @@ contract CreditManager is Ownable {
         require(newRatio > 1000, "Health ratio must be > 100%");
         healthRatio = newRatio;
     }
+
+    /**
+     * @dev Returns total collateral value across all credit accounts
+     */
+    function getTotalCollateralValue() public view returns (uint256) {
+        uint256 totalCollateral = 0;
+        
+        // Iterate through all credit accounts
+        for (uint i = 0; i < creditAccountsList.length; i++) {
+            address accountAddress = creditAccountsList[i];
+            if (accountAddress != address(0)) {
+                CreditAccount account = CreditAccount(accountAddress);
+                uint256 collateralPrice = priceOracle.getAssetPrice(
+                    address(account.collateralToken())
+                );
+                totalCollateral += account.collateralBalance() * collateralPrice;
+            }
+        }
+        
+        return totalCollateral;
+    }
+
+    // Add an array to track all credit accounts
+    address[] public creditAccountsList;
 }

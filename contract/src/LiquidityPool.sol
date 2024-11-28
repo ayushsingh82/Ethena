@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./CreditManager.sol";
 
 contract LiquidityPool is ERC20, Ownable {
     // Underlying asset (e.g., DAI, USDC) managed by the pool
@@ -18,6 +19,9 @@ contract LiquidityPool is ERC20, Ownable {
 
     // Add at the top with other state variables
     address public creditManager;
+
+    // Add tracking for total borrowed amount
+    uint256 public totalBorrowed;
 
     constructor(IERC20 _underlyingAsset, string memory name, string memory symbol, address _creditManager)
         ERC20(name, symbol)
@@ -70,6 +74,9 @@ contract LiquidityPool is ERC20, Ownable {
         require(msg.sender == address(creditManager), "Only credit manager can borrow");
         require(amount <= totalLiquidity(), "Insufficient liquidity");
 
+        // Update total borrowed amount
+        totalBorrowed += amount;
+
         // Transfer the tokens to the borrower
         underlyingAsset.transfer(borrower, amount);
     }
@@ -82,7 +89,9 @@ contract LiquidityPool is ERC20, Ownable {
     function repay(address borrower, uint256 amount) external {
         require(msg.sender == address(creditManager), "Only credit manager can repay");
         
-        // Token transfer is handled by CreditAccount
+        // Update total borrowed amount
+        totalBorrowed = totalBorrowed >= amount ? totalBorrowed - amount : 0;
+        
         emit Withdraw(borrower, amount);
     }
 
@@ -91,5 +100,34 @@ contract LiquidityPool is ERC20, Ownable {
      */
     function totalLiquidity() public view returns (uint256) {
         return underlyingAsset.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Returns the total value managed by the pool (current liquidity + borrowed amount)
+     */
+    function totalPoolValue() public view returns (uint256) {
+        return totalLiquidity() + totalBorrowed;
+    }
+
+    /**
+     * @dev Returns the utilization rate of the pool (borrowed/total value)
+     */
+    function utilizationRate() public view returns (uint256) {
+        uint256 total = totalPoolValue();
+        if (total == 0) return 0;
+        return (totalBorrowed * 10000) / total; // Returns basis points (100% = 10000)
+    }
+
+    /**
+     * @dev Returns the total value including pool assets and all credit account collaterals
+     */
+    function totalTVL() public view returns (uint256) {
+        // Get pool value (current liquidity + borrowed amount)
+        uint256 poolValue = totalPoolValue();
+        
+        // Get total collateral value from credit manager
+        uint256 collateralValue = CreditManager(creditManager).getTotalCollateralValue();
+        
+        return poolValue + collateralValue;
     }
 }
