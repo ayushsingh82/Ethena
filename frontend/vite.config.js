@@ -5,10 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    open: true
+    host: true,
+    strictPort: true,
+    watch: {
+      usePolling: true,
+    },
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: true
-  }
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 }) 

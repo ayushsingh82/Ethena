@@ -1,5 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
+import { PRICE_ORACLE_ADDRESS } from '../constants';
+import { priceOracleABI } from '../contracts/abis';
+
+// Create a Viem public client
+const client = createPublicClient({
+  chain: mainnet, // Adjust the chain based on your network
+  transport: http(),
+});
+
+// Helper function to read contract data
+const readPrice = async (address) => {
+  try {
+    const data = await client.readContract({
+      address: PRICE_ORACLE_ADDRESS,
+      abi: priceOracleABI,
+      functionName: 'getAssetPrice',
+      args: [address],
+    });
+    return data.toString(); // Convert result to string for display
+  } catch (error) {
+    console.error(`Error reading price for ${address}:`, error);
+    return 'Error';
+  }
+};
+
+// PriceDisplay Component to fetch and display prices
+const PriceDisplay = () => {
+  const [usdePrice, setUsdePrice] = useState(null);
+  const [susdePrice, setSusdePrice] = useState(null);
+
+  useEffect(() => {
+    // Fetch prices for USDE and sUSDE
+    const fetchPrices = async () => {
+      const usde = await readPrice('0x426E7d03f9803Dd11cb8616C65b99a3c0AfeA6dE'); // USDE address
+      const susde = await readPrice('0x80f9Ec4bA5746d8214b3A9a73cc4390AB0F0E633'); // sUSDe address
+      setUsdePrice(usde);
+      setSusdePrice(susde);
+    };
+
+    fetchPrices();
+  }, []);
+
+  return (
+    <p className="text-white text-md bg-gray-800 py-[5px] rounded-lg px-[20px]">
+      The current price of USDE/USD is{' '}
+      {usdePrice === null ? 'Loading...' : usdePrice}{' '}
+      and sUSDe/USD is{' '}
+      {susdePrice === null ? 'Loading...' : susdePrice}
+    </p>
+  );
+};
+
 
 const MarketCard = ({ asset, borrowRate, available, totalBorrowed }) => (
   <div className="bg-neutral-900 rounded-xl p-6 hover:bg-neutral-800 transition-all cursor-pointer">
@@ -70,9 +124,10 @@ const Borrow = () => {
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
+     <PriceDisplay/>
         {/* Header Section */}
         <div className="mb-12">
-          <h1 className="text-3xl font-bold mb-4">Borrow Markets</h1>
+          <h1 className="text-3xl font-bold mb-4 mt-[20px]">Borrow Markets</h1>
           <p className="text-gray-400">Borrow assets using your collateral through Credit Accounts</p>
         </div>
 

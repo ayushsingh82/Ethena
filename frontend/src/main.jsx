@@ -9,6 +9,7 @@ import './index.css';
 import Dashboard from './components/Dashboard';
 import Earn from './components/Earn';
 import Borrow from './components/Borrow';
+import '@rainbow-me/rainbowkit/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
