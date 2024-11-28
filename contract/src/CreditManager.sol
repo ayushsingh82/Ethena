@@ -45,6 +45,12 @@ contract CreditManager is Ownable {
         address _priceOracleAddr
     ) external {
         require(creditAccounts[msg.sender] == address(0), "Credit account already exists");
+        
+        // Add validation for zero addresses
+        require(collateralToken != address(0), "Invalid collateral token");
+        require(debtToken != address(0), "Invalid debt token");
+        require(liquidityPool != address(0), "Invalid liquidity pool");
+        require(_priceOracleAddr != address(0), "Invalid price oracle");
 
         // Deploy a new CreditAccount contract
         CreditAccount creditAccount = new CreditAccount(
@@ -58,7 +64,7 @@ contract CreditManager is Ownable {
 
         // Map the borrower to the credit account
         creditAccounts[msg.sender] = address(creditAccount);
-        creditAccountsList.push(address(creditAccount));  // Add to list
+        creditAccountsList.push(address(creditAccount));
 
         emit CreditAccountOpened(msg.sender, address(creditAccount));
     }
