@@ -9,7 +9,7 @@ function Navbar() {
     <nav className="bg-black">
       <div className="flex flex-row mx-auto px-[40px] py-[25px] justify-between items-center">
         <div className="font-semibold text-lg text-white">
-          <Link to="/">Payment</Link>
+          <Link to="/">LeverYer Protocol</Link>
         </div>
         
         <div className="flex flex-1 justify-center space-x-8 text-center text-white">
