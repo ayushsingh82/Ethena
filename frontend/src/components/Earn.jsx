@@ -1,39 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, writeContract } from 'viem';
 import { mainnet } from 'viem/chains';
-import { PRICE_ORACLE_ADDRESS } from '../constants';
-import { priceOracleABI } from '../contracts/abis';
+import { LIQUIDITY_POOL_ADDRESS, USDT_ADDRESS , PRICE_ORACLE_ADDRESS} from '../constants';
+import { liquidityPoolABI  , priceOracleABI} from '../contracts/abis';
 
 // Create a Viem public client
 const client = createPublicClient({
-  chain: mainnet, // Adjust the chain based on your network
+  chain: mainnet,
   transport: http(),
 });
 
-// Helper function to read contract data
-const readPrice = async (address) => {
+// Function to handle deposit to the liquidity pool
+const depositToPool = async (amount, address) => {
   try {
-    const data = await client.readContract({
-      address: PRICE_ORACLE_ADDRESS,
-      abi: priceOracleABI,
-      functionName: 'getAssetPrice',
-      args: [address],
+    const tx = await writeContract(client, {
+      address: LIQUIDITY_POOL_ADDRESS,
+      abi: liquidityPoolABI,
+      functionName: 'deposit',
+      args: [amount],
     });
-    return data.toString(); // Convert result to string for display
+    await tx.wait();
+    console.log(`Deposit to ${address} successful:`, tx);
   } catch (error) {
-    console.error(`Error reading price for ${address}:`, error);
-    return 'Error';
+    console.error(`Error depositing to ${address}:`, error);
   }
 };
 
-// PriceDisplay Component to fetch and display prices
+// PriceDisplay Component
 const PriceDisplay = () => {
   const [usdePrice, setUsdePrice] = useState(null);
   const [susdePrice, setSusdePrice] = useState(null);
 
   useEffect(() => {
-    // Fetch prices for USDE and sUSDE
     const fetchPrices = async () => {
       const usde = await readPrice('0x426E7d03f9803Dd11cb8616C65b99a3c0AfeA6dE'); // USDE address
       const susde = await readPrice('0x80f9Ec4bA5746d8214b3A9a73cc4390AB0F0E633'); // sUSDe address
@@ -54,7 +53,8 @@ const PriceDisplay = () => {
   );
 };
 
-const PoolCard = ({ asset, apy, tvl, utilization }) => (
+// Updated PoolCard Component
+const PoolCard = ({ asset, apy, tvl, utilization, onSupplyClick }) => (
   <div className="bg-neutral-900 rounded-xl p-6 hover:bg-neutral-800 transition-all cursor-pointer">
     <div className="flex justify-between items-center mb-6">
       <div className="flex items-center space-x-3">
@@ -66,7 +66,10 @@ const PoolCard = ({ asset, apy, tvl, utilization }) => (
           <p className="text-gray-400 text-sm">Passive Pool</p>
         </div>
       </div>
-      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm">
+      <button
+        onClick={onSupplyClick}
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm"
+      >
         Supply
       </button>
     </div>
@@ -89,32 +92,13 @@ const PoolCard = ({ asset, apy, tvl, utilization }) => (
 );
 
 const Earn = () => {
-  const pools = [
-    {
-      asset: 'WETH',
-      apy: '3.21',
-      tvl: '8.2M',
-      utilization: '76.5',
-    },
-    {
-      asset: 'WBTC',
-      apy: '2.85',
-      tvl: '5.1M',
-      utilization: '68.2',
-    },
-    {
-      asset: 'USDC',
-      apy: '4.12',
-      tvl: '12.4M',
-      utilization: '82.3',
-    },
-    {
-      asset: 'DAI',
-      apy: '3.95',
-      tvl: '6.8M',
-      utilization: '71.8',
-    },
-  ];
+  // Function to handle USDT deposit
+  const depositUSDTtoPool = async () => {
+    const depositAmount = prompt('Enter amount to deposit:');
+    if (depositAmount) {
+      await depositToPool(depositAmount, USDT_ADDRESS);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -143,37 +127,35 @@ const Earn = () => {
           </div>
         </div>
 
-        {/* Pools Grid */}
+        {/* Separate Boxes for DAI, USDC, and USDT */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {pools.map((pool, index) => (
-            <motion.div
-              key={pool.asset}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <PoolCard {...pool} />
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-12 bg-neutral-900 rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-4">How it works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">1. Supply Assets</h3>
-              <p className="text-gray-400">Deposit your crypto assets into the passive pools</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">2. Earn Yield</h3>
-              <p className="text-gray-400">Earn passive income from lending fees and protocol rewards</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">3. Withdraw Anytime</h3>
-              <p className="text-gray-400">Withdraw your assets and earnings at any time</p>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <PoolCard asset="DAI" apy="3.95" tvl="6.8M" utilization="71.8" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <PoolCard asset="USDC" apy="4.12" tvl="12.4M" utilization="82.3" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <PoolCard
+              asset="USDT"
+              apy="2.85"
+              tvl="5.1M"
+              utilization="68.2"
+              onSupplyClick={depositUSDTtoPool}
+            />
+          </motion.div>
         </div>
       </div>
     </div>
