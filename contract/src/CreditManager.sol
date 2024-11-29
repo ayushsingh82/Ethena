@@ -9,6 +9,9 @@ contract CreditManager is Ownable {
     // Mapping of borrowers to their credit accounts
     mapping(address => address) public creditAccounts;
 
+    // Add an array to track all credit accounts
+    address[] public creditAccountsList;
+
     // Maximum leverage ratio (10x = 1000%)
     uint256 public constant maxLeverageRatio = 1000;  // 10x leverage
     
@@ -127,6 +130,76 @@ contract CreditManager is Ownable {
     }
 
     /**
+     * @dev Deposit collateral into a credit account
+     * @param amount The amount of collateral to deposit
+     */
+    function depositCollateral(uint256 amount) external {
+        address creditAccountAddr = creditAccounts[msg.sender];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        creditAccount.depositCollateral(amount);
+    }
+
+    /**
+     * @dev Withdraw collateral from a credit account
+     * @param amount The amount of collateral to withdraw
+     */
+    function withdrawCollateral(uint256 amount) external {
+        address creditAccountAddr = creditAccounts[msg.sender];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        creditAccount.withdrawCollateral(amount);
+    }
+
+    /**
+     * @dev Borrow assets using credit account
+     * @param amount The amount to borrow
+     */
+    function incurDebt(uint256 amount) external {
+        address creditAccountAddr = creditAccounts[msg.sender];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        creditAccount.incurDebt(amount);
+    }
+
+    /**
+     * @dev Repay debt through credit account
+     * @param amount The amount to repay
+     */
+    function repayDebt(uint256 amount) external {
+        address creditAccountAddr = creditAccounts[msg.sender];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        creditAccount.repayDebt(amount);
+    }
+
+    /**
+     * @dev Get the LTV ratio for a credit account
+     * @param borrower The address of the borrower
+     * @return The current LTV ratio in basis points
+     */
+    function getLTV(address borrower) external view returns (uint256) {
+        address creditAccountAddr = creditAccounts[borrower];
+        require(creditAccountAddr != address(0), "No credit account found");
+
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        return creditAccount.getLTV();
+    }
+
+    /**
+     * @dev Get a user's credit account address
+     * @param borrower The address of the borrower
+     * @return The credit account address
+     */
+    function getCreditAccount(address borrower) external view returns (address) {
+        return creditAccounts[borrower];
+    }
+
+    /**
      * @dev Updates the health ratio.
      * @param newRatio The new health ratio.
      */
@@ -155,7 +228,4 @@ contract CreditManager is Ownable {
         
         return totalCollateral;
     }
-
-    // Add an array to track all credit accounts
-    address[] public creditAccountsList;
 }

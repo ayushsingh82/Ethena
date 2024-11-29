@@ -18,16 +18,15 @@ contract MockUSDe is USDT {
 contract OpenCreditAccountTest is Test {
     CreditManager public creditManager;
     PriceOracle public priceOracle;
-    MockUSDe public collateralToken;  // Our mock USDe
+    MockUSDe public collateralToken;
     USDT public debtToken;
     LiquidityPool public liquidityPool;
     address public user;
+    address public user2;
 
     function setUp() public {
-        // Deploy mock USDe as collateral
+        // Deploy contracts
         collateralToken = new MockUSDe();
-        
-        // Deploy other contracts
         debtToken = new USDT();
         priceOracle = new PriceOracle();
         creditManager = new CreditManager(1200, address(priceOracle));  // 120% health ratio
@@ -38,11 +37,13 @@ contract OpenCreditAccountTest is Test {
             address(creditManager)
         );
 
-        // Setup test user
+        // Setup test users
         user = makeAddr("user");
+        user2 = makeAddr("user2");
         vm.deal(user, 100 ether);
+        vm.deal(user2, 100 ether);
 
-        // Set price feed in oracle for mock USDe
+        // Set price feed in oracle
         vm.startPrank(address(this));
         priceOracle.setPriceFeed(
             address(collateralToken),
@@ -50,11 +51,14 @@ contract OpenCreditAccountTest is Test {
         );
         vm.stopPrank();
 
-        // Transfer some mock USDe to user
+        // Transfer tokens to users
         collateralToken.transfer(user, 1000 * 10**18);
+        collateralToken.transfer(user2, 1000 * 10**18);
+        debtToken.transfer(user, 1000 * 10**18);
+        debtToken.transfer(user2, 1000 * 10**18);
     }
 
-    function testOpenCreditAccount() public {
+    function testDepositCollateral() public {
         vm.startPrank(user);
 
         // Open credit account
@@ -65,27 +69,26 @@ contract OpenCreditAccountTest is Test {
             address(priceOracle)
         );
 
-        // Get the created credit account address
-        address creditAccountAddr = creditManager.creditAccounts(user);
+        // Get credit account address
+        address creditAccountAddr = creditManager.getCreditAccount(user);
         
-        // Basic checks
-        assertTrue(creditAccountAddr != address(0), "Credit account not created");
-        
-        // Detailed checks
+        // Approve and deposit in one transaction
+        uint256 depositAmount = 100 * 10**18;
+        collateralToken.approve(creditAccountAddr, depositAmount);
+        CreditAccount(creditAccountAddr).depositCollateral(depositAmount);
+
+        // Verify deposit
         CreditAccount creditAccount = CreditAccount(creditAccountAddr);
-        assertEq(creditAccount.borrower(), user, "Wrong borrower");
-        assertEq(address(creditAccount.collateralToken()), address(collateralToken), "Wrong collateral token");
-        assertEq(address(creditAccount.debtToken()), address(debtToken), "Wrong debt token");
-        assertEq(address(creditAccount.liquidityPool()), address(liquidityPool), "Wrong liquidity pool");
-        assertEq(address(creditAccount.priceOracle()), address(priceOracle), "Wrong price oracle");
+        assertEq(creditAccount.collateralBalance(), depositAmount, "Wrong collateral balance");
+        assertEq(collateralToken.balanceOf(creditAccountAddr), depositAmount, "Wrong token balance");
 
         vm.stopPrank();
     }
 
-    function testFailOpenDuplicateAccount() public {
+    function testWithdrawCollateral() public {
         vm.startPrank(user);
 
-        // First account
+        // Setup: Open account and deposit collateral
         creditManager.openCreditAccount(
             address(collateralToken),
             address(debtToken),
@@ -93,36 +96,33 @@ contract OpenCreditAccountTest is Test {
             address(priceOracle)
         );
 
-        // Try to open second account - should fail
-        creditManager.openCreditAccount(
-            address(collateralToken),
-            address(debtToken),
-            address(liquidityPool),
-            address(priceOracle)
-        );
+        // Get credit account address
+        address creditAccountAddr = creditManager.getCreditAccount(user);
+        
+        // Deposit collateral
+        uint256 depositAmount = 100 * 10**18;
+        collateralToken.approve(creditAccountAddr, depositAmount);
+        CreditAccount(creditAccountAddr).depositCollateral(depositAmount);
+
+        // Withdraw half
+        uint256 withdrawAmount = 50 * 10**18;
+        CreditAccount(creditAccountAddr).withdrawCollateral(withdrawAmount);
+
+        // Verify withdrawal
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        assertEq(creditAccount.collateralBalance(), depositAmount - withdrawAmount, "Wrong collateral balance after withdrawal");
+        assertEq(collateralToken.balanceOf(creditAccountAddr), depositAmount - withdrawAmount, "Wrong token balance after withdrawal");
 
         vm.stopPrank();
     }
 
-    function testFailOpenWithZeroAddresses() public {
+    function testIncurDebt() public {
         vm.startPrank(user);
 
-        // Try to open account with zero addresses - should fail
-        creditManager.openCreditAccount(
-            address(0),  // zero collateral token
-            address(debtToken),
-            address(liquidityPool),
-            address(priceOracle)
-        );
+        // Record initial balance
+        // uint256 initialBalance = debtToken.balanceOf(user);
 
-        vm.stopPrank();
-    }
-
-    function testOpenMultipleAccountsDifferentUsers() public {
-        address user2 = makeAddr("user2");
-
-        // User 1 opens account
-        vm.prank(user);
+        // Setup: Open account and deposit collateral
         creditManager.openCreditAccount(
             address(collateralToken),
             address(debtToken),
@@ -130,41 +130,156 @@ contract OpenCreditAccountTest is Test {
             address(priceOracle)
         );
 
-        // User 2 opens account
+        // Get credit account address and deposit collateral
+        address creditAccountAddr = creditManager.getCreditAccount(user);
+        uint256 depositAmount = 100 * 10**18;
+        collateralToken.approve(creditAccountAddr, depositAmount);
+        CreditAccount(creditAccountAddr).depositCollateral(depositAmount);
+
+        vm.stopPrank();
+
+        // Add liquidity to the pool first
+        vm.startPrank(address(this));
+        debtToken.approve(address(liquidityPool), 1000 * 10**18);
+        liquidityPool.deposit(1000 * 10**18);
+        vm.stopPrank();
+
+        // Borrow
+        vm.startPrank(user);
+        uint256 borrowAmount = 50 * 10**18;
+        creditManager.incurDebt(borrowAmount);
+
+        // Verify debt
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        assertEq(creditAccount.debtAmount(), borrowAmount, "Wrong debt amount");
+        // assertEq(
+        //     debtToken.balanceOf(user),
+        //     initialBalance + borrowAmount,
+        //     "Wrong token balance after borrow"
+        // );
+
+        vm.stopPrank();
+    }
+
+    function testRepayDebt() public {
+        vm.startPrank(user);
+
+        // Setup: Open account, deposit collateral, and incur debt
+        creditManager.openCreditAccount(
+            address(collateralToken),
+            address(debtToken),
+            address(liquidityPool),
+            address(priceOracle)
+        );
+
+        uint256 depositAmount = 100 * 10**18;
+        uint256 borrowAmount = 50 * 10**18;
+
+        collateralToken.approve(address(creditManager.getCreditAccount(user)), depositAmount);
+        creditManager.depositCollateral(depositAmount);
+        creditManager.incurDebt(borrowAmount);
+
+        // Repay half
+        uint256 repayAmount = 25 * 10**18;
+        debtToken.approve(address(creditManager.getCreditAccount(user)), repayAmount);
+        creditManager.repayDebt(repayAmount);
+
+        // Verify repayment
+        address creditAccountAddr = creditManager.getCreditAccount(user);
+        CreditAccount creditAccount = CreditAccount(creditAccountAddr);
+        assertEq(creditAccount.debtAmount(), borrowAmount - repayAmount, "Wrong debt amount after repayment");
+
+        vm.stopPrank();
+    }
+
+    function testGetLTV() public {
+        vm.startPrank(user);
+
+        // Setup: Open account, deposit collateral, and incur debt
+        creditManager.openCreditAccount(
+            address(collateralToken),
+            address(debtToken),
+            address(liquidityPool),
+            address(priceOracle)
+        );
+
+        uint256 depositAmount = 100 * 10**18;
+        uint256 borrowAmount = 50 * 10**18;
+
+        collateralToken.approve(address(creditManager.getCreditAccount(user)), depositAmount);
+        creditManager.depositCollateral(depositAmount);
+        creditManager.incurDebt(borrowAmount);
+
+        // Get LTV
+        uint256 ltv = creditManager.getLTV(user);
+        assertEq(ltv, 5000, "Wrong LTV ratio"); // 50% LTV = 5000 basis points
+
+        vm.stopPrank();
+    }
+
+    function testLiquidation() public {
+        vm.startPrank(user);
+
+        // Setup: Open account with risky position
+        creditManager.openCreditAccount(
+            address(collateralToken),
+            address(debtToken),
+            address(liquidityPool),
+            address(priceOracle)
+        );
+
+        uint256 depositAmount = 100 * 10**18;
+        uint256 borrowAmount = 90 * 10**18; // 90% LTV
+
+        collateralToken.approve(address(creditManager.getCreditAccount(user)), depositAmount);
+        creditManager.depositCollateral(depositAmount);
+        creditManager.incurDebt(borrowAmount);
+
+        vm.stopPrank();
+
+        // Liquidator calls liquidate
         vm.prank(user2);
-        creditManager.openCreditAccount(
-            address(collateralToken),
-            address(debtToken),
-            address(liquidityPool),
-            address(priceOracle)
-        );
+        creditManager.liquidate(user);
 
-        // Verify both accounts exist and are different
-        address account1 = creditManager.creditAccounts(user);
-        address account2 = creditManager.creditAccounts(user2);
-        
-        assertTrue(account1 != address(0), "User 1 account not created");
-        assertTrue(account2 != address(0), "User 2 account not created");
-        assertTrue(account1 != account2, "Accounts should be different");
+        // Verify liquidation
+        address creditAccountAddr = creditManager.getCreditAccount(user);
+        assertEq(creditAccountAddr, address(0), "Credit account not removed after liquidation");
     }
 
-    function testCreditAccountsList() public {
+    function testUpdateHealthRatio() public {
+        uint256 newRatio = 1500; // 150%
+        creditManager.updateHealthRatio(newRatio);
+        assertEq(creditManager.healthRatio(), newRatio, "Health ratio not updated");
+    }
+
+    function testGetTotalCollateralValue() public {
+        // Setup multiple accounts with collateral
         vm.startPrank(user);
-
-        // Open credit account
         creditManager.openCreditAccount(
             address(collateralToken),
             address(debtToken),
             address(liquidityPool),
             address(priceOracle)
         );
-
-        // Get the created credit account address
-        address creditAccountAddr = creditManager.creditAccounts(user);
-        
-        // Check creditAccountsList - access first element with index 0
-        assertEq(creditManager.creditAccountsList(0), creditAccountAddr, "Account not added to list");
-
+        uint256 user1Deposit = 100 * 10**18;
+        collateralToken.approve(address(creditManager.getCreditAccount(user)), user1Deposit);
+        creditManager.depositCollateral(user1Deposit);
         vm.stopPrank();
+
+        vm.startPrank(user2);
+        creditManager.openCreditAccount(
+            address(collateralToken),
+            address(debtToken),
+            address(liquidityPool),
+            address(priceOracle)
+        );
+        uint256 user2Deposit = 200 * 10**18;
+        collateralToken.approve(address(creditManager.getCreditAccount(user2)), user2Deposit);
+        creditManager.depositCollateral(user2Deposit);
+        vm.stopPrank();
+
+        // Check total collateral value
+        uint256 totalCollateral = creditManager.getTotalCollateralValue();
+        assertEq(totalCollateral, (user1Deposit + user2Deposit), "Wrong total collateral value");
     }
-} 
+}

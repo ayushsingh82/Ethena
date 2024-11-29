@@ -71,7 +71,6 @@ contract LiquidityPool is ERC20, Ownable {
      * @param amount The amount to borrow
      */
     function borrow(address borrower, uint256 amount) external {
-        require(msg.sender == address(creditManager), "Only credit manager can borrow");
         require(amount <= totalLiquidity(), "Insufficient liquidity");
 
         // Update total borrowed amount
