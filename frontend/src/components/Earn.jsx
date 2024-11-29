@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { createPublicClient, http, writeContract } from 'viem';
+import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { LIQUIDITY_POOL_ADDRESS, USDT_ADDRESS , PRICE_ORACLE_ADDRESS} from '../constants';
 import { liquidityPoolABI  , priceOracleABI} from '../contracts/abis';
