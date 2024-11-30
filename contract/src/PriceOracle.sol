@@ -16,7 +16,7 @@ contract PriceOracle is Ownable {
     constructor()
         Ownable(msg.sender)
     {
-        pyth = IPyth(0x2880aB155794e7179c9eE2e38200202908C17B43);
+        pyth = IPyth(0xA2aa501b19aff244D90cc15a4Cf739D2725B5729);
     }
 
     /**
@@ -30,28 +30,43 @@ contract PriceOracle is Ownable {
     }
 
     /**
-     * @dev Get the price of an asset from Pyth
-     * @param asset The address of the asset to query
-     * @return The price of the asset (scaled to 18 decimals)
+     * @dev Get the price of an asset from Pyth using getPriceUnsafe
      */
     function getAssetPrice(address asset) public view returns (uint256) {
         bytes32 priceId = priceFeeds[asset];
         require(priceId != bytes32(0), "Price feed not set for this asset");
 
-        PythStructs.Price memory price = pyth.getPrice(priceId);
-        require(price.price >= 0, "Invalid price feed response");
-        
-        // Convert to positive values and handle decimals
-        uint256 basePrice = uint256(int256(price.price));
-        int256 exponent = -price.expo;  // Note: price.expo is already negative for most assets
-        
-        // Need to scale to 18 decimals
-        int256 scaleBy = 18 - exponent;  // Calculate how many decimals we need to add/remove
-        
-        if (scaleBy < 0) {
-            return basePrice / (10 ** uint256(-scaleBy));
-        } else {
-            return basePrice * (10 ** uint256(scaleBy));
+        try pyth.getPriceUnsafe(priceId) returns (PythStructs.Price memory price) {
+            require(price.price >= 0, "Invalid price feed response");
+            
+            // Convert to positive values and handle decimals
+            uint256 basePrice = uint256(int256(price.price));
+            int256 exponent = -price.expo;
+            
+            // Scale to 18 decimals
+            int256 scaleBy = 18 - exponent;
+            
+            if (scaleBy < 0) {
+                return basePrice / (10 ** uint256(-scaleBy));
+            } else {
+                return basePrice * (10 ** uint256(scaleBy));
+            }
+        } catch {
+            revert("Failed to fetch price");
         }
+    }
+
+    /**
+     * @dev Update price feeds with the latest data
+     */
+    function updatePriceFeeds(bytes[] calldata priceUpdateData) external payable {
+        pyth.updatePriceFeeds{value: msg.value}(priceUpdateData);
+    }
+
+    /**
+     * @dev Get the valid time period for a price feed
+     */
+    function getValidTime() external view returns (uint validTimePeriod) {
+        return pyth.getValidTimePeriod();
     }
 }

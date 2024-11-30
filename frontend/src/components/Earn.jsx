@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { createPublicClient, http, writeContract } from 'viem';
-
-import { baseSepolia } from 'viem/chains';
+import { createPublicClient, http, createWalletClient } from 'viem';
+import { baseSepolia } from 'wagmi/chains';
 import { LIQUIDITY_POOL_ADDRESS, USDT_ADDRESS } from '../constants';
 import { liquidityPoolABI, erc20ABI } from '../contracts/abis';
 
 // Create a Viem public client
-const client = createPublicClient({
+const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(),
 });
@@ -15,14 +14,15 @@ const client = createPublicClient({
 // Function to approve USDT spending by the liquidity pool
 const approveUSDT = async (amount) => {
   try {
-    const tx = await writeContract(client, {
+    const walletClient = await createWalletClient();
+    const hash = await walletClient.writeContract({
       address: USDT_ADDRESS,
-      abi: erc20ABI, // Use the standard ERC-20 ABI for the approve function
+      abi: erc20ABI,
       functionName: 'approve',
       args: [LIQUIDITY_POOL_ADDRESS, amount],
     });
-    await tx.wait();
-    console.log('Approval successful:', tx);
+    await publicClient.waitForTransactionReceipt({ hash });
+    console.log('Approval successful:', hash);
   } catch (error) {
     console.error('Error during approval:', error);
     throw error;
@@ -32,14 +32,15 @@ const approveUSDT = async (amount) => {
 // Function to handle deposit to the liquidity pool
 const depositToPool = async (amount) => {
   try {
-    const tx = await writeContract(client, {
+    const walletClient = await createWalletClient();
+    const hash = await walletClient.writeContract({
       address: LIQUIDITY_POOL_ADDRESS,
       abi: liquidityPoolABI,
       functionName: 'deposit',
       args: [amount],
     });
-    await tx.wait();
-    console.log(Deposit successful:, tx);
+    await publicClient.waitForTransactionReceipt({ hash });
+    console.log('Deposit successful:', hash);
   } catch (error) {
     console.error('Error during deposit:', error);
     throw error;
