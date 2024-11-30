@@ -1,18 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
-import { LIQUIDITY_POOL_ADDRESS, USDT_ADDRESS , PRICE_ORACLE_ADDRESS} from '../constants';
-import { liquidityPoolABI  , priceOracleABI} from '../contracts/abis';
+import { createPublicClient, http, writeContract } from 'viem';
+
+import { baseSepolia } from 'viem/chains';
+import { LIQUIDITY_POOL_ADDRESS, USDT_ADDRESS } from '../constants';
+import { liquidityPoolABI, erc20ABI } from '../contracts/abis';
 
 // Create a Viem public client
 const client = createPublicClient({
-  chain: mainnet,
+  chain: baseSepolia,
   transport: http(),
 });
 
+// Function to approve USDT spending by the liquidity pool
+const approveUSDT = async (amount) => {
+  try {
+    const tx = await writeContract(client, {
+      address: USDT_ADDRESS,
+      abi: erc20ABI, // Use the standard ERC-20 ABI for the approve function
+      functionName: 'approve',
+      args: [LIQUIDITY_POOL_ADDRESS, amount],
+    });
+    await tx.wait();
+    console.log('Approval successful:', tx);
+  } catch (error) {
+    console.error('Error during approval:', error);
+    throw error;
+  }
+};
+
 // Function to handle deposit to the liquidity pool
-const depositToPool = async (amount, address) => {
+const depositToPool = async (amount) => {
   try {
     const tx = await writeContract(client, {
       address: LIQUIDITY_POOL_ADDRESS,
@@ -21,36 +39,11 @@ const depositToPool = async (amount, address) => {
       args: [amount],
     });
     await tx.wait();
-    console.log(`Deposit to ${address} successful:`, tx);
+    console.log(Deposit successful:, tx);
   } catch (error) {
-    console.error(`Error depositing to ${address}:`, error);
+    console.error('Error during deposit:', error);
+    throw error;
   }
-};
-
-// PriceDisplay Component
-const PriceDisplay = () => {
-  const [usdePrice, setUsdePrice] = useState(null);
-  const [susdePrice, setSusdePrice] = useState(null);
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      const usde = await readPrice('0x426E7d03f9803Dd11cb8616C65b99a3c0AfeA6dE'); // USDE address
-      const susde = await readPrice('0x80f9Ec4bA5746d8214b3A9a73cc4390AB0F0E633'); // sUSDe address
-      setUsdePrice(usde);
-      setSusdePrice(susde);
-    };
-
-    fetchPrices();
-  }, []);
-
-  return (
-    <p className="text-white text-md bg-gray-800 py-[5px] rounded-lg px-[20px]">
-      The current price of USDE/USD is{' '}
-      {usdePrice === null ? 'Loading...' : usdePrice}{' '}
-      and sUSDe/USD is{' '}
-      {susdePrice === null ? 'Loading...' : susdePrice}
-    </p>
-  );
 };
 
 // Updated PoolCard Component
@@ -92,19 +85,31 @@ const PoolCard = ({ asset, apy, tvl, utilization, onSupplyClick }) => (
 );
 
 const Earn = () => {
-  // Function to handle USDT deposit
+  // Function to handle USDT deposit with MetaMask interaction
   const depositUSDTtoPool = async () => {
-    const depositAmount = prompt('Enter amount to deposit:');
-    if (depositAmount) {
-      await depositToPool(depositAmount, USDT_ADDRESS);
+
+    if (!depositAmount) return;
+
+    try {
+      const formattedAmount = BigInt(depositAmount * 10 ** 6); // Assuming 6 decimals for USDT
+
+      // Approve the liquidity pool to spend USDT
+      console.log('Requesting approval...');
+      await approveUSDT(formattedAmount);
+
+      // Proceed with deposit after approval
+      console.log('Approval successful. Depositing...');
+      await depositToPool(formattedAmount);
+
+      console.log('Deposit successful.');
+    } catch (error) {
+      console.error('Transaction failed:', error);
     }
   };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
-        <PriceDisplay />
-
         {/* Header Section */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold mb-4 mt-[20px]">Passive Pools</h1>
@@ -127,7 +132,7 @@ const Earn = () => {
           </div>
         </div>
 
-        {/* Separate Boxes for DAI, USDC, and USDT */}
+        {/* Pool Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -141,7 +146,7 @@ const Earn = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
           >
-            <PoolCard asset="USDC" apy="4.12" tvl="12.4M" utilization="82.3" />
+            <PoolCard asset="USDe" apy="4.12" tvl="12.4M" utilization="82.3" />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -153,7 +158,7 @@ const Earn = () => {
               apy="2.85"
               tvl="5.1M"
               utilization="68.2"
-              onSupplyClick={depositUSDTtoPool}
+              onSupplyClick={approveUSDT}
             />
           </motion.div>
         </div>

@@ -26,7 +26,7 @@
     "react-router-dom": "^6.22.0",
     "simplex-noise": "^4.0.3",
     "tailwind-merge": "^2.5.5",
-    "viem": "^1.19.9",
+    "viem": "^2.21.53",
     "wagmi": "^1.4.7",
     "web3": "^4.3.0"
   },

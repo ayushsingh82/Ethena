@@ -1,17 +1,17 @@
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const { chains, publicClient } = configureChains(
-  [sepolia],
+  [baseSepolia],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'Ethena Protocol',
-  projectId: 'YOUR_WALLET_CONNECT_PROJECT_ID', // Get from https://cloud.walletconnect.com
+  projectId: 'e7fa7d19fd057ecd9403a0e89bd62b8b', // Get from https://cloud.walletconnect.com
   chains,
 });
 
