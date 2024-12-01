@@ -121,11 +121,6 @@ contract OpenCreditAccountTest is Test {
         // Verify debt
         CreditAccount creditAccount = CreditAccount(creditAccountAddr);
         assertEq(creditAccount.debtAmount(), borrowAmount, "Wrong debt amount");
-        // assertEq(
-        //     debtToken.balanceOf(user),
-        //     initialBalance + borrowAmount,
-        //     "Wrong token balance after borrow"
-        // );
 
         vm.stopPrank();
     }
