@@ -44,14 +44,14 @@ const PriceDisplay = () => {
     fetchPrices();
   }, []);
 
-  return (
-    <p className="text-white text-md bg-gray-800 py-[5px] rounded-lg px-[20px]">
-      The current price of USDE/USD is{' '}
-      {usdePrice === null ? 'Loading...' : usdePrice}{' '}
-      and sUSDe/USD is{' '}
-      {susdePrice === null ? 'Loading...' : susdePrice}
-    </p>
-  );
+  // return (
+  //   // <p className="text-white text-md bg-gray-800 py-[5px] rounded-lg px-[20px]">
+  //   //   The current price of USDE/USD is{' '}
+  //   //   {usdePrice === null ? 'Loading...' : usdePrice}{' '}
+  //   //   and sUSDe/USD is{' '}
+  //   //   {susdePrice === null ? 'Loading...' : susdePrice}
+  //   // </p>
+  // );
 };
 
 
