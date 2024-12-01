@@ -4,9 +4,12 @@
   <em>The Liquidity & Leverage Layer for DeFi on Ethena Network</em>
 </p>
 
+
 ## Overview
 
 LeverYer Protocol is a decentralized protocol that serves as the foundational liquidity & leverage layer for DeFi on Ethena Network. By consolidating liquidity and offering streamlined access to leverage on various DeFi protocols, LeverYer empowers users to maximize their capital efficiency while maintaining robust risk management.
+
+[![Watch the video](https://github.com/user-attachments/assets/bdeffd7c-92d2-412f-b20e-133bb19fd2e9)](https://youtu.be/_l7WXookN04)
 
 ## Key Features
 
